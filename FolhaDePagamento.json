@@ -2,11 +2,11 @@
   {
     "nome": "Thiago Costa",
     "cargo": "Desenvolvedor",
-    "salarioBase": 4500,
+    "salarioBase": 6000,
     "id": 539,
-    "inss": 450,
-    "irrf": "607.50",
-    "salarioLiquido": 3442.5
+    "inss": 600,
+    "irrf": "1485.00",
+    "salarioLiquido": 3915
   },
   {
     "nome": "Jean Costa",
@@ -16,5 +16,23 @@
     "inss": 530,
     "irrf": "715.50",
     "salarioLiquido": 4054.5
+  },
+  {
+    "nome": "Helio Alves",
+    "cargo": "Analista de dados",
+    "salarioBase": 10000,
+    "id": 873,
+    "inss": 1000,
+    "irrf": "2475.00",
+    "salarioLiquido": 6525
+  },
+  {
+    "nome": "Matheus Pereira",
+    "cargo": "Desenvolvedor",
+    "salarioBase": 3200,
+    "id": 910,
+    "inss": 320,
+    "irrf": "432.00",
+    "salarioLiquido": 2448
   }
 ]

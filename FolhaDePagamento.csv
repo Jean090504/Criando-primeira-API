@@ -1,3 +1,5 @@
-ID;Nome;Cargo;Salario Base;INSS;IRRF;Salario Liquido
-539;Thiago Costa;Desenvolvedor;4500;450;607.50;3442.5
+ID;Nome;Cargo;Salário Base;INSS;IRRF;Salário Líquido
+539;Thiago Costa;Desenvolvedor;6000;600;1485.00;3915
 315;Jean Costa;Desenvolvedor;5300;530;715.50;4054.5
+873;Helio Alves;Analista de dados;10000;1000;2475.00;6525
+910;Matheus Pereira;Desenvolvedor;3200;320;432.00;2448

@@ -10,7 +10,14 @@ app.use(express.json())
 
 // Simulando um banco de dados em memória para 
 // armazenar os funcionários cadastrados, começamos com um array vazio.
-const bancoDeDados = []
+let bancoDeDados = []
+
+// Verificamos se existe um arquivo JSON com os dados salvos. Se existir, carregamos os dados para o nosso banco de dados simulado.
+if (fs.existsSync('FolhaDePagamento.json')) {
+    const dadosArquivo = fs.readFileSync('FolhaDePagamento.json', 'utf-8')
+    bancoDeDados = JSON.parse(dadosArquivo)
+    console.log("Sistema: Dados carregados com sucesso!")
+}
 
 // Nossa primeira e única rota!
 app.get('/', (requisicao, resposta) => {
@@ -112,23 +119,14 @@ app.post('/funcionario', (requisicao, resposta) => {
     // ==========================================
 
     app.get('/exportar', (requisicao, resposta) => {
-        // Transforma a lista do Banco de Dados em uma string JSON formatada
+        // Transforma o que está na memória em texto JSON
         const dadosJson = JSON.stringify(bancoDeDados, null, 2)
-
-        //O servidor checa se o arquivo já existe no computador
-        if(fs.existsSync('FolhaDePagamento.json', dadosJson)){
-            // Se o arquivo existe, ele lê o texto do arquivo
-            const dadosExistentes = fs.readFileSync('FolhaDePagamento.json', 'utf-8')
-
-            // Transforma o texto de volta em uma lista (Array) de objetos
-            bancoDeDados = JSON.parse(dadosExistentes)
-
-            console.log("Sistema: Dados antigos carregados com sucesso!")
-        }else{
-            console.log("Sistema: Nenhum arquivo encontrado. Iniciando banco de dados do zero.")
-        }
-
-        //Devolve uma reposta de sucesso para o cliente
+    
+        // Escreve no arquivo 
+        fs.writeFileSync('FolhaDePagamento.json', dadosJson)
+    
+        console.log("Sistema: Arquivo JSON atualizado com sucesso!")
+        
         resposta.json({
             mensagem: 'Dados exportados para FolhaDePagamento.json com sucesso!'
         })
@@ -139,26 +137,22 @@ app.post('/funcionario', (requisicao, resposta) => {
     // ==========================================
 
     app.get('/exportar-csv', (requisicao, resposta) => {
-        //Cabeçalho do CSV
-        const cabecalho = "ID;Nome;Cargo;Salario Base;INSS;IRRF;Salario Liquido\n"
-
-        //Pegamos os dados do banco de dados e transformamos em linhas de CSV
-        /* O método map() => é usado para criar um novo array a partir do array original (bancoDeDados), 
-        transformando cada objeto funcionário em uma string formatada como uma linha de CSV. */
+        // Criamos o cabeçalho (os títulos das colunas)
+        const cabecalho = "ID;Nome;Cargo;Salário Base;INSS;IRRF;Salário Líquido\n"
+    
+        // Transformamos cada funcionário em uma linha de texto separada por ;
         const linhas = bancoDeDados.map((func) => {
-            //func => representa cada funcionário do banco de dados. Para cada funcionário, criamos uma string onde os campos são separados por ponto e vírgula (;),
-            //  seguindo a ordem definida no cabeçalho do CSV.
             return `${func.id};${func.nome};${func.cargo};${func.salarioBase};${func.inss};${func.irrf};${func.salarioLiquido}`
-        })
-
-        //Juntamos o cabecalho com todas as linhas criadas, separando por quebra de linha
-        // O método join("\n") => é usado para unir todas as linhas do array 'linhas' em uma única string.
-        const conteudoCsv = cabecalho + linhas.join("\n")
-
-        //Escreve o conteúdo CSV no arquivo 'funcionarios.csv'
-        fs.writeFileSync('FolhaDePagamento.csv', conteudoCsv)
-
-        //Devolve uma resposta de sucesso para o cliente
+        }).join('\n')
+    
+        // Juntamos o cabeçalho com as linhas
+        const conteudoFinal = cabecalho + linhas
+    
+        // Salvamos o texto formatado no arquivo CSV
+        fs.writeFileSync('FolhaDePagamento.csv', conteudoFinal)
+    
+        console.log("Sistema: Planilha CSV atualizada com sucesso!")
+        
         resposta.json({
             mensagem: 'Dados exportados para FolhaDePagamento.csv com sucesso!'
         })
@@ -193,6 +187,73 @@ app.post('/funcionario', (requisicao, resposta) => {
         })
 
     })
+
+    // ==========================================
+    //            BUSCAR FUNCIONÁRIO
+    // ==========================================
+
+    app.get('/buscar', (requisicao, resposta) => {
+        // O .trim() remove espaços acidentais no início ou fim
+        const nomeBusca = requisicao.query.nome ? requisicao.query.nome.trim() : ""
+    
+        console.log(`Buscando por: "${nomeBusca}"`); // Verifique isso no terminal!
+        console.log("Dados em memória:", bancoDeDados.length, "funcionários.")
+    
+        if (!nomeBusca || !isNaN(nomeBusca)) {
+            return resposta.status(400).json({ mensagem: "Por favor, digite um nome." })
+        }
+    
+        const resultados = bancoDeDados.filter(func => 
+            func.nome.toLowerCase().includes(nomeBusca.toLowerCase())
+        )
+    
+        if (resultados.length === 0) {
+            return resposta.status(404).json({ mensagem: "Nenhum funcionário encontrado." })
+        }
+    
+        resposta.json(resultados)
+    })
+
+    // ==========================================
+    //            EDITAR FUNCIONÁRIO (UPDATE)
+    // ==========================================
+    app.put('/funcionario/:id', (requisicao, resposta) => {
+        const idParaEditar = Number(requisicao.params.id)
+        const novosDados = requisicao.body
+
+        // Procuramos o funcionário na lista
+        const funcionario = bancoDeDados.find(f => f.id === idParaEditar)
+
+        if (!funcionario) {
+            return resposta.status(404).json({ mensagem: "Funcionário não encontrado!" })
+        }
+
+        // Atualizamos apenas o que foi enviado (Nome, Cargo ou Salário)
+        if (novosDados.nome) funcionario.nome = novosDados.nome
+        if (novosDados.cargo) funcionario.cargo = novosDados.cargo
+        
+        if (novosDados.salarioBase) {
+            funcionario.salarioBase = novosDados.salarioBase
+            
+            // Caso o salário base seja atualizado, iremos atualizar o cálculo do INSS, IRRF e salário líquido.
+            const inss = funcionario.salarioBase * 0.10
+            let irrf = 0
+            const calculoIRRF = funcionario.salarioBase - inss
+            
+            if(calculoIRRF > 5000) irrf = calculoIRRF * 0.275
+            else if(calculoIRRF > 2500) irrf = calculoIRRF * 0.15
+
+            funcionario.inss = inss
+            funcionario.irrf = Number(irrf).toFixed(2)
+            funcionario.salarioLiquido = funcionario.salarioBase - inss - irrf
+        }
+
+        resposta.json({
+            mensagem: "Cadastro atualizado com sucesso!",
+            funcionarioAtualizado: funcionario
+        })
+    })
+
 
 // Ligando o servidor na porta 3000
 app.listen(3000, () => {
