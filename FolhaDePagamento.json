@@ -34,5 +34,14 @@
     "inss": 320,
     "irrf": "432.00",
     "salarioLiquido": 2448
+  },
+  {
+    "nome": "Cosme",
+    "cargo": "Analista de dados",
+    "salarioBase": 5000,
+    "id": 242,
+    "inss": 500,
+    "irrf": "675.00",
+    "salarioLiquido": 3825
   }
 ]
